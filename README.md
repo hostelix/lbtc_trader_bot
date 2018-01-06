@@ -5,10 +5,8 @@ Bot usado para buscar mejores ofertas de compra y venta en LocalBitcoins.com
     1) npm install
     2) yarn
 
-# Run Bot
+## Add custom config
     cp config/config.sample.json config.json
-
-- replace data
-
+## Run Bot
     npm run start
 
