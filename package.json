@@ -1,0 +1,23 @@
+{
+  "name": "bot_lbtc",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "rimraf dist/ && babel ./ --out-dir dist/ --ignore ./node_modules,./.babelrc,./package.json,./npm-debug.log,telegram_users.db --copy-files",
+    "start": "npm run build && node dist/src/index.js"
+  },
+  "author": "Israel Lugo",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^0.17.1",
+    "lokijs": "^1.5.1",
+    "node-telegram-bot-api": "^0.30.0"
+  },
+  "devDependencies": {
+    "babel-cli": "^6.26.0",
+    "babel-preset-env": "^1.6.1",
+    "rimraf": "^2.6.2"
+  }
+}
