@@ -4,6 +4,7 @@ const COMMAND_RETURN = "return";
 const COMMAND_CURRENCY = "currency";
 const COMMAND_COUNTRY_CODE = "country code";
 const COMMAND_COUNTRY = "country";
+const COMMAND_THRESHOLD = "threshold";
 
 export {
     COMMAND_BANK,
@@ -11,5 +12,6 @@ export {
     COMMAND_COUNTRY_CODE,
     COMMAND_CURRENCY,
     COMMAND_RETURN,
-    COMMAND_SETTINGS
+    COMMAND_SETTINGS,
+    COMMAND_THRESHOLD
 }

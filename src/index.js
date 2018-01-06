@@ -1,22 +1,22 @@
 import TelegramBot from 'node-telegram-bot-api';
 import {
-    is_name_bank, 
-    is_country, 
-    is_country_code, 
+    is_name_bank,
+    is_country,
+    is_country_code,
     is_currency,
     get_data_localbitcoins
 } from './utils';
 import DBService from './db';
 import config from '../config/config';
 import keyboards from './keyboards';
-import data from './data';
 import {
     COMMAND_BANK,
     COMMAND_COUNTRY,
     COMMAND_RETURN,
     COMMAND_SETTINGS,
     COMMAND_CURRENCY,
-    COMMAND_COUNTRY_CODE
+    COMMAND_COUNTRY_CODE,
+    COMMAND_THRESHOLD
 } from './commands';
 
 
@@ -46,21 +46,23 @@ bot.onText(/\/start/, (msg) => {
 
         let merge_pages = [].concat.apply([], res);
 
-        DB.getCollection(config.collectionUsers).then((collection)=>{
+        DB.getCollection(config.collectionUsers).then((collection) => {
             let user = collection.findOne({"chat_id": {$aeq: msg.chat.id}});
-    
+
             if (user) {
-                
+
+                const {bank_name, currency, threshold} = user;
+
                 let filter_pages = merge_pages.filter((item) => {
                     return item.data.bank_name.toLowerCase().includes(user.bank_name)
                         && item.data.currency === user.currency
                         && Number(item.data.temp_price) >= Number(treshold)
                 });
-        
+
                 if (filter_pages.length === 0) {
                     bot.sendMessage(msg.chat.id, "Lo sentimos no hemos encountrado ofertas");
                 }
-        
+
                 filter_pages.forEach((value) => {
                     const keyboard = {
                         "inline_keyboard": [
@@ -69,20 +71,20 @@ bot.onText(/\/start/, (msg) => {
                             ]
                         ]
                     };
-        
+
                     const options = {
                         "reply_markup": JSON.stringify(keyboard),
                         "parse_mode": "HTML"
                     };
-        
+
                     let message =
                         `<b>${value.data.bank_name}</b>\n<em>MININO: ${value.data.min_amount} ${value.data.currency}</em>\n<em>MAXIMO: ${value.data.max_amount} ${value.data.currency}</em>\n<em>Locacion: ${value.data.location_string}</em>\n<code>PRECIO: ${value.data.temp_price} ${value.data.currency} / BTC</code>`;
-        
+
                     bot.smsg_lowerendMessage(msg.chat.id, message, options);
                 });
 
             }
-            else{
+            else {
                 bot.sendMessage(msg.chat.id, 'The parameters have not been selected', {
                     "reply_markup": {
                         "keyboard": keyboards.home
@@ -147,27 +149,32 @@ bot.on('message', (msg) => {
         });
     }
 
+    if (message === COMMAND_THRESHOLD) {
+        bot.sendMessage(msg.chat.id, "Write threshold:");
+    }
+
+
     if (is_name_bank(message)) {
 
-        DB.getCollection(config.collectionUsers).then((collection)=>{
+        DB.getCollection(config.collectionUsers).then((collection) => {
             let user = collection.findOne({"chat_id": {$aeq: msg.chat.id}});
-    
+
             if (user) {
-                user.bank_name = message
+                user.bank_name = message;
                 DB.update(config.collectionUsers, user)
-                .then((col) =>{
-                    console.log("update", col);
-                });
+                    .then((col) => {
+                        console.log("update", col);
+                    });
             }
             else {
                 DB.insert(config.collectionUsers, {
                     "chat_id": msg.chat.id,
                     "bank_name": message
-                }).then((col)=>{
+                }).then((col) => {
                     console.log("insert", col);
                 });
-            } 
-            
+            }
+
             bot.sendMessage(msg.chat.id, `You have selected the bank: ${message.toUpperCase()}`, {
                 "reply_markup": {
                     "keyboard": keyboards.home
@@ -177,32 +184,32 @@ bot.on('message', (msg) => {
         });
     }
 
-    if(is_country_code(message)){
+    if (is_country_code(message)) {
     }
 
-    if(is_country(message)){  
+    if (is_country(message)) {
     }
 
-    if(is_currency(message)){
-        DB.getCollection(config.collectionUsers).then((collection)=>{
+    if (is_currency(message)) {
+        DB.getCollection(config.collectionUsers).then((collection) => {
             let user = collection.findOne({"chat_id": {$aeq: msg.chat.id}});
-    
+
             if (user) {
-                user.currency = message
+                user.currency = message;
                 DB.update(config.collectionUsers, user)
-                .then((col) =>{
-                    console.log("update", col);
-                });
+                    .then((col) => {
+                        console.log("update", col);
+                    });
             }
             else {
                 DB.insert(config.collectionUsers, {
                     "chat_id": msg.chat.id,
                     "currency": message
-                }).then((col)=>{
+                }).then((col) => {
                     console.log("insert", col);
                 });
-            } 
-            
+            }
+
             bot.sendMessage(msg.chat.id, `You have selected the currency: ${message.toUpperCase()}`, {
                 "reply_markup": {
                     "keyboard": keyboards.home

@@ -12,7 +12,7 @@ const banks = [
 ];
 
 const settings = [
-    ["Bank", "Treshold"],
+    ["Bank", "Threshold"],
     ["Country", "Country Code", "Currency",]
 ];
 
