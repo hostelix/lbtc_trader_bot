@@ -19,80 +19,95 @@ import {
     COMMAND_THRESHOLD
 } from './commands';
 
-
 const bot = new TelegramBot(config.telegramToken, {polling: true});
-
-const treshold = 1750000000
-
-const bank_name = 'banesco'
-
-const currency = 'VEF'
-
-const country = 'venezuela'
-
-const countrycode = 've'
-
-const url = `https://localbitcoins.com/sell-bitcoins-online/${countrycode}/${country}/transfers-with-specific-bank/.json?`;
-
-let pages = []
-
 const DB = new DBService();
 
-bot.onText(/\/start/, (msg) => {
+const checkFieldsUser = (bot, chat_id, user) => {
 
-    bot.sendMessage(msg.chat.id, "Consultando Datos en Localbitcoins");
+    const fields = [
+        {key: 'threshold', label: 'Threshold'},
+        {key: 'bank_name', label: 'Bank Name'},
+        {key: 'currency', label: 'Currency'},
+        {key: 'country', label: 'Country'},
+        {key: 'country_code', label: 'Country Code'}
+    ];
+
+    let invalid_fields = fields.filter((field) => {
+        if (!user.hasOwnProperty(field.key)) {
+            return field;
+        }
+    });
+
+    if (invalid_fields.length > 0) {
+        let mesg = '*The following parameters do not have an assigned value:*\n\n';
+
+        invalid_fields.forEach((field) => {
+            mesg += '`🚫 ' + field.label + '\n`';
+        });
+        bot.sendMessage(chat_id, mesg, {"parse_mode": "Markdown"});
+    }
+    return invalid_fields.length === 0;
+};
+
+const processSearch = (bot, message, user) => {
+
+    bot.sendMessage(message.chat.id, "Consultando Datos en Localbitcoins");
+
+    let pages = [];
+    const url = `https://localbitcoins.com/sell-bitcoins-online/${user.country_code}/${user.country}/transfers-with-specific-bank/.json?`;
 
     get_data_localbitcoins(url, pages).then((res) => {
-
         let merge_pages = [].concat.apply([], res);
 
-        DB.getCollection(config.collectionUsers).then((collection) => {
-            let user = collection.findOne({"chat_id": {$aeq: msg.chat.id}});
-
-            if (user) {
-
-                const {bank_name, currency, threshold} = user;
-
-                let filter_pages = merge_pages.filter((item) => {
-                    return item.data.bank_name.toLowerCase().includes(user.bank_name)
-                        && item.data.currency === user.currency
-                        && Number(item.data.temp_price) >= Number(treshold)
-                });
-
-                if (filter_pages.length === 0) {
-                    bot.sendMessage(msg.chat.id, "Lo sentimos no hemos encountrado ofertas");
-                }
-
-                filter_pages.forEach((value) => {
-                    const keyboard = {
-                        "inline_keyboard": [
-                            [
-                                {"text": "Ver en Localbitcoins", "url": value.actions.public_view},
-                            ]
-                        ]
-                    };
-
-                    const options = {
-                        "reply_markup": JSON.stringify(keyboard),
-                        "parse_mode": "HTML"
-                    };
-
-                    let message =
-                        `<b>${value.data.bank_name}</b>\n<em>MININO: ${value.data.min_amount} ${value.data.currency}</em>\n<em>MAXIMO: ${value.data.max_amount} ${value.data.currency}</em>\n<em>Locacion: ${value.data.location_string}</em>\n<code>PRECIO: ${value.data.temp_price} ${value.data.currency} / BTC</code>`;
-
-                    bot.smsg_lowerendMessage(msg.chat.id, message, options);
-                });
-
-            }
-            else {
-                bot.sendMessage(msg.chat.id, 'The parameters have not been selected', {
-                    "reply_markup": {
-                        "keyboard": keyboards.home
-                    }
-                });
-            }
+        let filter_pages = merge_pages.filter((item) => {
+            return item.data.bank_name.toLowerCase().includes(user.bank_name)
+                && item.data.currency === user.currency
+                && Number(item.data.temp_price) >= Number(user.threshold)
         });
 
+        if (filter_pages.length === 0) {
+            bot.sendMessage(message.chat.id, "Lo sentimos no hemos encountrado ofertas");
+        }
+
+        filter_pages.forEach((value) => {
+            const keyboard = {
+                "inline_keyboard": [
+                    [
+                        {"text": "Ver en Localbitcoins", "url": value.actions.public_view},
+                    ]
+                ]
+            };
+
+            const options = {
+                "reply_markup": JSON.stringify(keyboard),
+                "parse_mode": "HTML"
+            };
+
+            let message =
+                `<b>${value.data.bank_name}</b>\n<em>MININO: ${value.data.min_amount} ${value.data.currency}</em>\n<em>MAXIMO: ${value.data.max_amount} ${value.data.currency}</em>\n<em>Locacion: ${value.data.location_string}</em>\n<code>PRECIO: ${value.data.temp_price} ${value.data.currency} / BTC</code>`;
+
+            bot.sendMessage(message.chat.id, message, options);
+        });
+    });
+};
+
+bot.onText(/\/start/, (msg) => {
+    DB.getCollection(config.collectionUsers).then((collection) => {
+        let user = collection.findOne({"chat_id": {$aeq: msg.chat.id}});
+
+        if (user) {
+            if (!checkFieldsUser(bot, msg.chat.id, user)) {
+                return false;
+            }
+            processSearch(bot, msg, user);
+        }
+        else {
+            bot.sendMessage(msg.chat.id, 'An unexpected error has occurred', {
+                "reply_markup": {
+                    "keyboard": keyboards.home
+                }
+            });
+        }
     });
 });
 
