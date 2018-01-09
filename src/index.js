@@ -4,7 +4,8 @@ import {
     is_country,
     is_country_code,
     is_currency,
-    get_data_localbitcoins, is_command
+    get_data_localbitcoins,
+    is_command
 } from './utils';
 import config from '../config/config';
 import keyboards from './keyboards';
@@ -19,15 +20,9 @@ import {
     COMMAND_THRESHOLD
 } from './commands';
 
-import lowdb from 'lowdb';
-import FileSync from 'lowdb/adapters/FileSync';
+import DBservice from './db';
 
-const adapter = new FileSync('db.bak.json');
-const db = lowdb(adapter);
-
-if (!db.has(config.collectionUsers).value()) {
-    db.set(config.collectionUsers, []).write();
-}
+const db = new DBservice().getDB();
 
 const bot = new TelegramBot(config.telegramToken, {polling: true});
 
@@ -112,9 +107,11 @@ const saveSettings = (db, chat_id, data) => {
             .write();
     }
     else {
-        data.chat_id = chat_id;
         db.get(config.collectionUsers)
-            .push(data)
+            .push({
+                chat_id: chat_id,
+                ...data
+            })
             .write();
     }
 };
@@ -144,7 +141,7 @@ bot.on('message', (msg) => {
     const message = msg.text.toString().toLowerCase();
 
     //if (is_command(message, ALL_COMMANDS)) {
-    if(message){
+    if (message) {
 
         if (message === COMMAND_BANK) {
             bot.sendMessage(msg.chat.id, "Choose an bank:", {
