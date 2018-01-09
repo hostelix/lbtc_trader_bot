@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "rimraf dist/ && babel ./ --out-dir dist/ --ignore ./node_modules,./.babelrc,./package.json,./npm-debug.log,telegram_users.db --copy-files",
+    "build": "rimraf dist/ && babel ./ --out-dir dist/ --ignore ./node_modules,./README.md,./.babelrc,./package.json,./yarn.lock,./npm-debug.log,telegram_users.db --copy-files",
     "start": "npm run build && node dist/src/index.js"
   },
   "author": "Israel Lugo",
@@ -17,6 +17,7 @@
   },
   "devDependencies": {
     "babel-cli": "^6.26.0",
+    "babel-plugin-transform-object-rest-spread": "^6.26.0",
     "babel-preset-env": "^1.6.1",
     "rimraf": "^2.6.2"
   }
