@@ -4,12 +4,12 @@ import {
     is_country,
     is_country_code,
     is_currency,
-    get_data_localbitcoins
+    get_data_localbitcoins, is_command
 } from './utils';
-import DBService from './db';
 import config from '../config/config';
 import keyboards from './keyboards';
 import {
+    ALL_COMMANDS,
     COMMAND_BANK,
     COMMAND_COUNTRY,
     COMMAND_RETURN,
@@ -19,8 +19,17 @@ import {
     COMMAND_THRESHOLD
 } from './commands';
 
+import lowdb from 'lowdb';
+import FileSync from 'lowdb/adapters/FileSync';
+
+const adapter = new FileSync('db.bak.json');
+const db = lowdb(adapter);
+
+if (!db.has(config.collectionUsers).value()) {
+    db.set(config.collectionUsers, []).write();
+}
+
 const bot = new TelegramBot(config.telegramToken, {polling: true});
-const DB = new DBService();
 
 const checkFieldsUser = (bot, chat_id, user) => {
 
@@ -91,147 +100,147 @@ const processSearch = (bot, message, user) => {
     });
 };
 
-bot.onText(/\/start/, (msg) => {
-    DB.getCollection(config.collectionUsers).then((collection) => {
-        let user = collection.findOne({"chat_id": {$aeq: msg.chat.id}});
+const saveSettings = (db, chat_id, data) => {
+    let user = db.get(config.collectionUsers)
+        .find({chat_id: chat_id})
+        .value();
 
-        if (user) {
-            if (!checkFieldsUser(bot, msg.chat.id, user)) {
-                return false;
-            }
-            processSearch(bot, msg, user);
-        }
-        else {
-            bot.sendMessage(msg.chat.id, 'An unexpected error has occurred', {
-                "reply_markup": {
-                    "keyboard": keyboards.home
-                }
-            });
-        }
-    });
-});
-
-
-bot.on('message', (msg) => {
-
-    const message = msg.text.toString().toLowerCase();
-
-    if (message === COMMAND_BANK) {
-        bot.sendMessage(msg.chat.id, "Choose an bank:", {
-            "reply_markup": {
-                "keyboard": keyboards.banks
-            }
-        });
+    if (user) {
+        db.get(config.collectionUsers)
+            .find({chat_id: chat_id})
+            .assign(data)
+            .write();
     }
+    else {
+        data.chat_id = chat_id;
+        db.get(config.collectionUsers)
+            .push(data)
+            .write();
+    }
+};
 
-    if (message === COMMAND_RETURN) {
-        bot.sendMessage(msg.chat.id, "Choose an option:", {
+bot.onText(/\/start/, (msg) => {
+    let user = db.get(config.collectionUsers)
+        .find({chat_id: msg.chat.id})
+        .value();
+
+    if (user) {
+        if (!checkFieldsUser(bot, msg.chat.id, user)) {
+            return false;
+        }
+        processSearch(bot, msg, user);
+    }
+    else {
+        bot.sendMessage(msg.chat.id, 'An unexpected error has occurred', {
             "reply_markup": {
                 "keyboard": keyboards.home
             }
         });
     }
-
-    if (message === COMMAND_SETTINGS) {
-        bot.sendMessage(msg.chat.id, "Choose an option:", {
-            "reply_markup": {
-                "keyboard": keyboards.settings
-            }
-        });
-    }
-
-    if (message === COMMAND_COUNTRY) {
-        bot.sendMessage(msg.chat.id, "Choose an country:", {
-            "reply_markup": {
-                "keyboard": keyboards.country
-            }
-        });
-    }
-
-    if (message === COMMAND_COUNTRY_CODE) {
-        bot.sendMessage(msg.chat.id, "Choose an country code:", {
-            "reply_markup": {
-                "keyboard": keyboards.country_codes
-            }
-        });
-    }
-
-    if (message === COMMAND_CURRENCY) {
-        bot.sendMessage(msg.chat.id, "Choose an currency:", {
-            "reply_markup": {
-                "keyboard": keyboards.currencies
-            }
-        });
-    }
-
-    if (message === COMMAND_THRESHOLD) {
-        bot.sendMessage(msg.chat.id, "Write threshold:");
-    }
+});
 
 
-    if (is_name_bank(message)) {
+bot.on('message', (msg) => {
+    const message = msg.text.toString().toLowerCase();
 
-        DB.getCollection(config.collectionUsers).then((collection) => {
-            let user = collection.findOne({"chat_id": {$aeq: msg.chat.id}});
+    //if (is_command(message, ALL_COMMANDS)) {
+    if(message){
 
-            if (user) {
-                user.bank_name = message;
-                DB.update(config.collectionUsers, user)
-                    .then((col) => {
-                        console.log("update", col);
-                    });
-            }
-            else {
-                DB.insert(config.collectionUsers, {
-                    "chat_id": msg.chat.id,
-                    "bank_name": message
-                }).then((col) => {
-                    console.log("insert", col);
-                });
-            }
+        if (message === COMMAND_BANK) {
+            bot.sendMessage(msg.chat.id, "Choose an bank:", {
+                "reply_markup": {
+                    "keyboard": keyboards.banks
+                }
+            });
+        }
+
+        if (message === COMMAND_RETURN) {
+            bot.sendMessage(msg.chat.id, "Choose an option:", {
+                "reply_markup": {
+                    "keyboard": keyboards.home
+                }
+            });
+        }
+
+        if (message === COMMAND_SETTINGS) {
+            bot.sendMessage(msg.chat.id, "Choose an option:", {
+                "reply_markup": {
+                    "keyboard": keyboards.settings
+                }
+            });
+        }
+
+        if (message === COMMAND_COUNTRY) {
+            bot.sendMessage(msg.chat.id, "Choose an country:", {
+                "reply_markup": {
+                    "keyboard": keyboards.country
+                }
+            });
+        }
+
+        if (message === COMMAND_COUNTRY_CODE) {
+            bot.sendMessage(msg.chat.id, "Choose an country code:", {
+                "reply_markup": {
+                    "keyboard": keyboards.country_codes
+                }
+            });
+        }
+
+        if (message === COMMAND_CURRENCY) {
+            bot.sendMessage(msg.chat.id, "Choose an currency:", {
+                "reply_markup": {
+                    "keyboard": keyboards.currencies
+                }
+            });
+        }
+
+        if (message === COMMAND_THRESHOLD) {
+            bot.sendMessage(msg.chat.id, "Write threshold:");
+        }
+
+
+        if (is_name_bank(message)) {
+            saveSettings(db, msg.chat.id, {bank_name: message});
 
             bot.sendMessage(msg.chat.id, `You have selected the bank: ${message.toUpperCase()}`, {
                 "reply_markup": {
                     "keyboard": keyboards.home
                 }
             });
+        }
 
-        });
-    }
+        if (is_country_code(message)) {
+            saveSettings(db, msg.chat.id, {country_code: message});
 
-    if (is_country_code(message)) {
-    }
+            bot.sendMessage(msg.chat.id, `You have selected the Country Code: ${message.toUpperCase()}`, {
+                "reply_markup": {
+                    "keyboard": keyboards.home
+                }
+            });
+        }
 
-    if (is_country(message)) {
-    }
+        if (is_country(message)) {
+            saveSettings(db, msg.chat.id, {country: message});
 
-    if (is_currency(message)) {
-        DB.getCollection(config.collectionUsers).then((collection) => {
-            let user = collection.findOne({"chat_id": {$aeq: msg.chat.id}});
+            bot.sendMessage(msg.chat.id, `You have selected the country: ${message.toUpperCase()}`, {
+                "reply_markup": {
+                    "keyboard": keyboards.home
+                }
+            });
+        }
 
-            if (user) {
-                user.currency = message;
-                DB.update(config.collectionUsers, user)
-                    .then((col) => {
-                        console.log("update", col);
-                    });
-            }
-            else {
-                DB.insert(config.collectionUsers, {
-                    "chat_id": msg.chat.id,
-                    "currency": message
-                }).then((col) => {
-                    console.log("insert", col);
-                });
-            }
+        if (is_currency(message)) {
+            saveSettings(db, msg.chat.id, {currency: message});
 
             bot.sendMessage(msg.chat.id, `You have selected the currency: ${message.toUpperCase()}`, {
                 "reply_markup": {
                     "keyboard": keyboards.home
                 }
             });
-
-        });
+        }
+    }
+    else {
+        bot.sendMessage(msg.chat.id, '?????');
     }
 });
 
