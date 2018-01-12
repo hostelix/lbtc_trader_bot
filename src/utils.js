@@ -60,11 +60,26 @@ const is_command = (mesg, commands) => {
     return commands.map(command => command.toLowerCase()).indexOf(mesg) !== -1;
 };
 
+const toUnicode = (str) => {
+    let unicodeString = '';
+    for (let i = 0; i < str.length; i++) {
+        let theUnicode = str.charCodeAt(i).toString(16).toUpperCase();
+        while (theUnicode.length < 4) {
+            theUnicode = '0' + theUnicode;
+        }
+        theUnicode = '\\u' + theUnicode;
+        unicodeString += theUnicode;
+    }
+    return unicodeString;
+};
+
+
 export {
     get_data_localbitcoins,
     is_name_bank,
     is_country_code,
     is_country,
     is_currency,
-    is_command
+    is_command,
+    toUnicode
 }
