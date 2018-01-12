@@ -1,10 +1,11 @@
-const COMMAND_BANK = "bank";
-const COMMAND_SETTINGS = "settings";
-const COMMAND_RETURN = "return";
-const COMMAND_CURRENCY = "currency";
-const COMMAND_COUNTRY_CODE = "country code";
-const COMMAND_COUNTRY = "country";
+const COMMAND_BANK = "\uD83C\uDFDB Bank";
+const COMMAND_SETTINGS = "\u2699 Settings";
+const COMMAND_RETURN = "\u2B05 Return";
+const COMMAND_CURRENCY = "\uD83D\uDCB2 Currency";
+const COMMAND_COUNTRY_CODE = "\uD83C\uDF10 Country Code";
+const COMMAND_COUNTRY = "\uD83C\uDF0E Country";
 const COMMAND_THRESHOLD = "threshold";
+const COMMAND_START = "\u2705 Start";
 
 const ALL_COMMANDS = [
     COMMAND_BANK,
@@ -13,7 +14,8 @@ const ALL_COMMANDS = [
     COMMAND_CURRENCY,
     COMMAND_COUNTRY_CODE,
     COMMAND_COUNTRY,
-    COMMAND_THRESHOLD
+    COMMAND_THRESHOLD,
+    COMMAND_START
 ];
 
 export {
@@ -24,5 +26,6 @@ export {
     COMMAND_CURRENCY,
     COMMAND_RETURN,
     COMMAND_SETTINGS,
-    COMMAND_THRESHOLD
+    COMMAND_THRESHOLD,
+    COMMAND_START
 }
