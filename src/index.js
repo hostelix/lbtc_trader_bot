@@ -5,7 +5,8 @@ import {
     is_country_code,
     is_currency,
     get_data_localbitcoins,
-    is_command
+    is_command,
+    toUnicode
 } from './utils';
 import config from '../config/config';
 import keyboards from './keyboards';
@@ -115,7 +116,7 @@ const saveSettings = (db, chat_id, data) => {
             .write();
     }
 };
-
+//(?:^|\b)(hosted)(?=\b|$)
 bot.onText(/\/start/, (msg) => {
     let user = db.get(config.collectionUsers)
         .find({chat_id: msg.chat.id})
@@ -138,106 +139,109 @@ bot.onText(/\/start/, (msg) => {
 
 
 bot.on('message', (msg) => {
-    const message = msg.text.toString().toLowerCase();
+    if (msg.hasOwnProperty('text')) {
+        const message = msg.text;
 
-    //if (is_command(message, ALL_COMMANDS)) {
-    if (message) {
+        if (message) {
 
-        if (message === COMMAND_BANK) {
-            bot.sendMessage(msg.chat.id, "Choose an bank:", {
-                "reply_markup": {
-                    "keyboard": keyboards.banks
-                }
-            });
+            switch (message) {
+                case COMMAND_BANK:
+                    bot.sendMessage(msg.chat.id, "Choose an bank:", {
+                        "reply_markup": {
+                            "keyboard": keyboards.banks
+                        }
+                    });
+                    break;
+
+                case COMMAND_RETURN:
+                    bot.sendMessage(msg.chat.id, "Choose an option:", {
+                        "reply_markup": {
+                            "keyboard": keyboards.home
+                        }
+                    });
+                    break;
+
+                case COMMAND_SETTINGS:
+                    bot.sendMessage(msg.chat.id, "Choose an option:", {
+                        "reply_markup": {
+                            "keyboard": keyboards.settings
+                        }
+                    });
+                    break;
+
+                case COMMAND_COUNTRY:
+                    bot.sendMessage(msg.chat.id, "Choose an country:", {
+                        "reply_markup": {
+                            "keyboard": keyboards.country
+                        }
+                    });
+                    break;
+
+                case COMMAND_COUNTRY_CODE:
+                    bot.sendMessage(msg.chat.id, "Choose an country code:", {
+                        "reply_markup": {
+                            "keyboard": keyboards.country_codes
+                        }
+                    });
+                    break;
+
+                case COMMAND_CURRENCY:
+                    bot.sendMessage(msg.chat.id, "Choose an currency:", {
+                        "reply_markup": {
+                            "keyboard": keyboards.currencies
+                        }
+                    });
+                    break;
+
+                case COMMAND_THRESHOLD:
+                    bot.sendMessage(msg.chat.id, "Write threshold:");
+                    break;
+
+            }
+
+            if (is_name_bank(message)) {
+                saveSettings(db, msg.chat.id, {bank_name: message});
+
+                bot.sendMessage(msg.chat.id, `You have selected the bank: ${message.toUpperCase()}`, {
+                    "reply_markup": {
+                        "keyboard": keyboards.home
+                    }
+                });
+            }
+
+            if (is_country_code(message)) {
+                saveSettings(db, msg.chat.id, {country_code: message});
+
+                bot.sendMessage(msg.chat.id, `You have selected the Country Code: ${message.toUpperCase()}`, {
+                    "reply_markup": {
+                        "keyboard": keyboards.home
+                    }
+                });
+            }
+
+            if (is_country(message)) {
+                saveSettings(db, msg.chat.id, {country: message});
+
+                bot.sendMessage(msg.chat.id, `You have selected the country: ${message.toUpperCase()}`, {
+                    "reply_markup": {
+                        "keyboard": keyboards.home
+                    }
+                });
+            }
+
+            if (is_currency(message)) {
+                saveSettings(db, msg.chat.id, {currency: message});
+
+                bot.sendMessage(msg.chat.id, `You have selected the currency: ${message.toUpperCase()}`, {
+                    "reply_markup": {
+                        "keyboard": keyboards.home
+                    }
+                });
+            }
         }
-
-        if (message === COMMAND_RETURN) {
-            bot.sendMessage(msg.chat.id, "Choose an option:", {
-                "reply_markup": {
-                    "keyboard": keyboards.home
-                }
-            });
+        else {
+            bot.sendMessage(msg.chat.id, '?????');
         }
-
-        if (message === COMMAND_SETTINGS) {
-            bot.sendMessage(msg.chat.id, "Choose an option:", {
-                "reply_markup": {
-                    "keyboard": keyboards.settings
-                }
-            });
-        }
-
-        if (message === COMMAND_COUNTRY) {
-            bot.sendMessage(msg.chat.id, "Choose an country:", {
-                "reply_markup": {
-                    "keyboard": keyboards.country
-                }
-            });
-        }
-
-        if (message === COMMAND_COUNTRY_CODE) {
-            bot.sendMessage(msg.chat.id, "Choose an country code:", {
-                "reply_markup": {
-                    "keyboard": keyboards.country_codes
-                }
-            });
-        }
-
-        if (message === COMMAND_CURRENCY) {
-            bot.sendMessage(msg.chat.id, "Choose an currency:", {
-                "reply_markup": {
-                    "keyboard": keyboards.currencies
-                }
-            });
-        }
-
-        if (message === COMMAND_THRESHOLD) {
-            bot.sendMessage(msg.chat.id, "Write threshold:");
-        }
-
-
-        if (is_name_bank(message)) {
-            saveSettings(db, msg.chat.id, {bank_name: message});
-
-            bot.sendMessage(msg.chat.id, `You have selected the bank: ${message.toUpperCase()}`, {
-                "reply_markup": {
-                    "keyboard": keyboards.home
-                }
-            });
-        }
-
-        if (is_country_code(message)) {
-            saveSettings(db, msg.chat.id, {country_code: message});
-
-            bot.sendMessage(msg.chat.id, `You have selected the Country Code: ${message.toUpperCase()}`, {
-                "reply_markup": {
-                    "keyboard": keyboards.home
-                }
-            });
-        }
-
-        if (is_country(message)) {
-            saveSettings(db, msg.chat.id, {country: message});
-
-            bot.sendMessage(msg.chat.id, `You have selected the country: ${message.toUpperCase()}`, {
-                "reply_markup": {
-                    "keyboard": keyboards.home
-                }
-            });
-        }
-
-        if (is_currency(message)) {
-            saveSettings(db, msg.chat.id, {currency: message});
-
-            bot.sendMessage(msg.chat.id, `You have selected the currency: ${message.toUpperCase()}`, {
-                "reply_markup": {
-                    "keyboard": keyboards.home
-                }
-            });
-        }
-    }
-    else {
-        bot.sendMessage(msg.chat.id, '?????');
     }
 });
 
