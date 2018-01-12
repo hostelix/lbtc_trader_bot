@@ -1,7 +1,7 @@
 const config = {
     telegramToken: 'MY_SUPER_SECRET_TOKEN',
-    pathDB: '',
-    collectionUsers: ''
+    pathDB: 'database.json',
+    collectionUsers: 'users'
 };
   
 module.exports = config;
